@@ -11,6 +11,9 @@ $adb = Join-Path $env:ANDROID_HOME 'platform-tools/adb.exe'
 $emulator = Join-Path $env:ANDROID_HOME 'emulator/emulator.exe'
 if (-not (Test-Path -LiteralPath $emulator)) { throw 'Android SDK/emulator is not installed in .tools/android-sdk.' }
 if (-not (Test-Path -LiteralPath "$env:ANDROID_AVD_HOME/CampusHome.avd")) { throw 'The CampusHome virtual device has not been created.' }
+$avdConfig = Join-Path $env:ANDROID_AVD_HOME 'CampusHome.avd/config.ini'
+$avdText = [IO.File]::ReadAllText($avdConfig).Replace('hw.keyboard=no', 'hw.keyboard=yes').Replace('hw.keyboard.lid=yes', 'hw.keyboard.lid=no')
+[IO.File]::WriteAllText($avdConfig, $avdText, (New-Object Text.UTF8Encoding($false)))
 if ($Mode -eq 'demo') {
     foreach ($port in 9099, 8080, 5001) {
         if (-not (Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue)) {
