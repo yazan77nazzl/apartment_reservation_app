@@ -106,7 +106,7 @@ flutter doctor --android-licenses
 flutter build apk --debug
 ```
 
-Output is `build/app/outputs/flutter-apk/app-debug.apk`. An APK was **not** produced here: the build reported `No Android SDK found`. iOS builds require macOS/Xcode and signing. Android/iOS device integrations remain to be tested; web compilation is available. See [test results](docs/TEST_RESULTS.md) for measured results and remaining limitations.
+Output is `build/app/outputs/flutter-apk/app-debug.apk`. A demo debug APK was built, installed, and launched on the local CampusHome Android emulator. Its Firebase services use the local emulator suite; to build for the live Spark project, omit `USE_EMULATORS=true` and use `BACKEND_MODE=spark`. iOS builds require macOS/Xcode and signing. Full Android UI flows and native device integrations remain manual checks. See [test results](docs/TEST_RESULTS.md) for measured results and remaining limitations.
 
 ## Limitations
 

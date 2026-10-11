@@ -26,7 +26,8 @@ if (-not ($devices -match 'emulator-5554\s+device')) {
 $deadline = (Get-Date).AddMinutes(3)
 do {
     Start-Sleep -Seconds 3
-    $boot = & $adb -s emulator-5554 shell getprop sys.boot_completed 2>$null
+    try { $boot = & $adb -s emulator-5554 shell getprop sys.boot_completed 2>$null }
+    catch { $boot = $null }
 } while ($boot -ne '1' -and (Get-Date) -lt $deadline)
 if ($boot -ne '1') { throw 'The emulator did not finish booting. Check its window and retry.' }
 if ($Mode -eq 'demo') {
