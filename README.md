@@ -70,7 +70,11 @@ No real payment provider or client-side real-payment success exists. Do not depl
 
 ## Architecture
 
-To apply the supplied logo, save the original image as `assets/images/logo.png`, run `scripts/apply-logo.ps1`, and rebuild/restart Flutter. The login/header automatically use the bundled file; the script generates Android/iOS/web icons. Until the file is provided, the app uses its existing housing icon. The chat's inline image was visible but not available as a local file during this session.
+The supplied logo is bundled as `assets/images/logo.png` and appears in the login/header and Android/iOS/web icons. After replacing the image, run `scripts/apply-logo.ps1` and rebuild/restart Flutter to update all icons.
+
+For the locally installed Android SDK and CampusHome virtual device, run `./scripts/run-android.ps1` to open the emulator and start demo mode. Keep Firebase emulators running in another terminal (`./scripts/start-emulators.ps1`), and run `./scripts/seed-demo.ps1` once. To use the real Spark Firebase project instead, run `./scripts/run-android.ps1 -Mode live`; demo payment confirmation requires the local backend.
+
+Use `demo-student@example.test` on Android and `demo-owner@example.test` in the web preview to check both sides of a request. Both use `DemoOnly!2026`. Request an available room as the student, approve it as the owner, return to the student to make a sandbox payment, then check the reservation, owner calendar, messages, and renewal. A review requires a confirmed stay that has already started. These accounts and payments are local demo data.
 
 `lib/core/` contains configuration, localization, theme, guards and async/form widgets. Feature screens cover auth, listings/rooms, reservations/payments, owner dashboard/calendar, chat, reviews, profiles and notices. Riverpod owns session/repository/locale state; GoRouter applies role guards. Firestore streams render live data.
 

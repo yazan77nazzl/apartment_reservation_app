@@ -1,0 +1,6 @@
+{
+  "git.repositoryScanIgnoredFolders": [".tools"],
+  "git.ignoredRepositories": [
+    "C:/Users/yazan/OneDrive/Desktop/apartment_reservation_app/.tools/flutter"
+  ]
+}
