@@ -72,7 +72,7 @@ No real payment provider or client-side real-payment success exists. Do not depl
 
 The supplied logo is bundled as `assets/images/logo.png` and appears in the login/header and Android/iOS/web icons. After replacing the image, run `scripts/apply-logo.ps1` and rebuild/restart Flutter to update all icons.
 
-For the locally installed Android SDK and CampusHome virtual device, run `./scripts/run-android.ps1` to open the emulator and start demo mode. Keep Firebase emulators running in another terminal (`./scripts/start-emulators.ps1`), and run `./scripts/seed-demo.ps1` once. To use the real Spark Firebase project instead, run `./scripts/run-android.ps1 -Mode live`; demo payment confirmation requires the local backend.
+For the locally installed Android SDK and CampusHome virtual device, run `./scripts/run-android.ps1` to open the emulator and connect to the real Spark Firebase project. Accounts and application records are stored in `apartment-reservation-ap-d7a35`. For optional local testing, use `./scripts/run-android.ps1 -Mode demo`, keep Firebase emulators running in another terminal (`./scripts/start-emulators.ps1`), and run `./scripts/seed-demo.ps1` once. Demo payment confirmation requires the local backend.
 
 Use `demo-student@example.test` on Android and `demo-owner@example.test` in the web preview to check both sides of a request. Both use `DemoOnly!2026`. Request an available room as the student, approve it as the owner, return to the student to make a sandbox payment, then check the reservation, owner calendar, messages, and renewal. A review requires a confirmed stay that has already started. These accounts and payments are local demo data.
 
@@ -106,7 +106,7 @@ flutter doctor --android-licenses
 flutter build apk --debug
 ```
 
-Output is `build/app/outputs/flutter-apk/app-debug.apk`. A demo debug APK was built, installed, and launched on the local CampusHome Android emulator. Its Firebase services use the local emulator suite; to build for the live Spark project, omit `USE_EMULATORS=true` and use `BACKEND_MODE=spark`. iOS builds require macOS/Xcode and signing. Full Android UI flows and native device integrations remain manual checks. See [test results](docs/TEST_RESULTS.md) for measured results and remaining limitations.
+Output is `build/app/outputs/flutter-apk/app-debug.apk`. Both demo and live Spark debug builds were installed and launched on the local CampusHome Android emulator; the currently installed APK connects to the real Firebase project with `USE_EMULATORS=false` and `BACKEND_MODE=spark`. iOS builds require macOS/Xcode and signing. Full Android UI flows and native device integrations remain manual checks. See [test results](docs/TEST_RESULTS.md) for measured results and remaining limitations.
 
 ## Limitations
 

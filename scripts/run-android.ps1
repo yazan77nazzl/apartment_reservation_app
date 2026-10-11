@@ -1,4 +1,4 @@
-param([ValidateSet('demo', 'live')][string]$Mode = 'demo')
+param([ValidateSet('demo', 'live')][string]$Mode = 'live')
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath (Split-Path -Parent $PSScriptRoot)
 $env:ANDROID_HOME = Join-Path (Get-Location) '.tools/android-sdk'

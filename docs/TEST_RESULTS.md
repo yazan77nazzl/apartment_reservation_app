@@ -14,6 +14,7 @@ Environment: Windows, Flutter 3.47.7 / Dart 3.13.5 (workspace-local SDK), Node 2
 - Spark Firestore rules compiled by Firebase and deployed; required indexes created. Billing was not changed.
 - Installed Google's Android command-line SDK and Android Emulator 37.2.12 in `.tools/android-sdk`; created a Pixel 6 / Android 15 (API 35) x86_64 virtual device. Windows Hypervisor Platform acceleration check succeeded.
 - Android demo debug APK built successfully, installed, and launched on `emulator-5554`. Native Firebase initialization succeeded and the authentication UI rendered after correcting a duplicate default-app initialization caused by native auto-init using the live configuration. Debug builds initialize Firebase explicitly from Dart; release native initialization remains unchanged.
+- Android live Spark debug APK subsequently built with `USE_EMULATORS=false`, installed, and launched with the supplied logo and login screen. Android launch defaults to the real project. Live account creation is left to the user; local demo accounts were not migrated.
 - Supplied logo bundled and Android/iOS/web launcher icons generated. Standalone web rebuilt successfully with the logo asset (HTTP 200 from local preview).
 - iOS build not run: requires macOS/Xcode.
 
