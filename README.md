@@ -55,7 +55,7 @@ Project: **apartment-reservation-ap-d7a35**. Android/iOS/web registration is com
 .\scripts\run-live.ps1
 ```
 
-The live app uses Firebase Authentication and Firestore directly. Create your own student/owner accounts and listings; production data is never seeded. Demo image mode selects bundled fictional illustrations and never contacts Firebase Storage. See [Firebase setup](docs/FIREBASE_SETUP.md) for exact platform and migration instructions.
+The live app uses Firebase Authentication and Firestore directly, with Supabase for apartment/profile photos. Complete [Supabase image setup](docs/SUPABASE_IMAGES.md) and fill the ignored local `config/image-storage.json` before uploading. Create your own student/owner accounts and listings; production data is never seeded. Optional demo image mode selects bundled fictional illustrations. Firebase Storage is inactive in Supabase mode. See [Firebase setup](docs/FIREBASE_SETUP.md) for platform instructions.
 
 | Capability | Spark live project | Local Functions emulator |
 |---|---|---|
@@ -63,7 +63,7 @@ The live app uses Firebase Authentication and Firestore directly. Create your ow
 | Requests, owner decisions, cancellation, in-app notices, chat/read status/calendar | Yes | Yes |
 | Confirmed payments, paid reservation renewal and tenant review demonstration | Trusted historical stays only; no checkout | Explicitly fictional sandbox checkout |
 | Booking conflict policy | One unexpired approval per room | Multiple nonoverlapping dated stays |
-| Real photo uploads | Unavailable; demo assets instead | Optional emulated Storage adapter |
+| Real photo uploads | Supabase after its auth/bucket setup | Bundled demo assets or optional emulated Firebase Storage |
 | Automatic push notifications | No delivery backend deployed | In-app notices; FCM delivery skipped |
 
 No real payment provider or client-side real-payment success exists. Do not deploy Functions/Storage to the Spark project. No billing upgrade is required for the current setup.

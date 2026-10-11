@@ -17,12 +17,18 @@ test('Spark rules protect free-plan client operations', { timeout: 120000 }, asy
     await t.test('registration private profiles immutable roles and demo image persistence', async () => {
       for (const [db, uid, role, name, email] of [[owner,ownerId,'owner','Owner','owner@example.test'],[student,studentId,'student','Student','student@example.test'],[other,otherId,'student','Other','other@example.test']]) await assertSucceeds(setDoc(doc(db,'users',uid), { firstName:name,lastName:'Demo',role,gender:'female',email,phone:'0590000000',address:'Jenin',photoUrl:'',createdAt:serverTimestamp() }));
       await assertSucceeds(updateDoc(doc(student,'users',studentId), { photoUrl:'assets/images/demo-avatar.png',updatedAt:serverTimestamp() }));
+      await assertSucceeds(updateDoc(doc(student,'users',studentId), { photoUrl:`https://cevglebdxbblglvzbvad.supabase.co/storage/v1/object/public/housing-images/profiles/${studentId}/123-abc.png`,updatedAt:serverTimestamp() }));
+      await assertFails(updateDoc(doc(student,'users',studentId), { photoUrl:'https://attacker.test/photo.png',updatedAt:serverTimestamp() }));
+      await assertFails(updateDoc(doc(student,'users',studentId), { photoUrl:'https://otherproject.supabase.co/storage/v1/object/public/housing-images/profiles/test/photo.png',updatedAt:serverTimestamp() }));
+      await assertFails(updateDoc(doc(other,'users',studentId), { photoUrl:`https://cevglebdxbblglvzbvad.supabase.co/storage/v1/object/public/housing-images/profiles/${studentId}/123-abc.png`,updatedAt:serverTimestamp() }));
       await assertFails(updateDoc(doc(student,'users',studentId), { role:'owner',updatedAt:serverTimestamp() }));
       await assertFails(getDoc(doc(other,'users',studentId)));
       await assertFails(setDoc(doc(student,'users','forged-id'), { role:'owner' }));
     });
     await t.test('owner creates listings/rooms; cross-owner and student writes denied', async () => {
       await assertSucceeds(setDoc(doc(owner,'apartments',apartmentId), apartment));
+      await assertSucceeds(updateDoc(doc(owner,'apartments',apartmentId), {images:[`https://cevglebdxbblglvzbvad.supabase.co/storage/v1/object/public/housing-images/apartments/${ownerId}/${apartmentId}/123-abc.jpg`],updatedAt:serverTimestamp()}));
+      await assertFails(updateDoc(doc(student,'apartments',apartmentId), {images:[`https://cevglebdxbblglvzbvad.supabase.co/storage/v1/object/public/housing-images/apartments/${studentId}/${apartmentId}/123-abc.jpg`],updatedAt:serverTimestamp()}));
       await assertSucceeds(setDoc(doc(owner,'rooms',roomId), room));
       await assertFails(updateDoc(doc(student,'apartments',apartmentId), { title:'Attack',updatedAt:serverTimestamp() }));
       await assertFails(updateDoc(doc(student,'rooms',roomId), { priceMinor:1,updatedAt:serverTimestamp() }));

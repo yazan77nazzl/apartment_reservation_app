@@ -7,7 +7,7 @@ service cloud.firestore {
   function role(r) { return signed() && user().role == r; }
   function member(r) { return signed() && (r.studentId == me() || r.ownerId == me()); }
   function txt(x,max) { return x is string && x.size() > 0 && x.size() <= max; }
-  function image(x) { return x is string && (x == '' || x in ['assets/images/demo-garden.png','assets/images/demo-olive.png','assets/images/demo-avatar.png'] || x.matches('https://firebasestorage.googleapis.com/.*')); }
+  function image(x) { return x is string && x.size() < 2000 && (x == '' || x in ['assets/images/demo-garden.png','assets/images/demo-olive.png','assets/images/demo-avatar.png'] || x.matches('https://firebasestorage.googleapis.com/.*') || x.matches('https://cevglebdxbblglvzbvad[.]supabase[.]co/storage/v1/object/public/housing-images/(profiles|apartments)/[A-Za-z0-9_/-]+[.](jpg|png|webp)')); }
   function images(x) { return x is list && x.size() <= 10
    && (x.size() < 1 || image(x[0])) && (x.size() < 2 || image(x[1]))
    && (x.size() < 3 || image(x[2])) && (x.size() < 4 || image(x[3]))

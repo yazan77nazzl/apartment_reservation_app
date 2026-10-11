@@ -22,7 +22,7 @@ Future<void> main() async {
         FirebaseFunctions.instanceFor(region: AppConfig.region)
             .useFunctionsEmulator(AppConfig.host, 5001);
       }
-      if (!AppConfig.demoImages) {
+      if (AppConfig.imageStorage == 'firebase') {
         await FirebaseStorage.instance.useStorageEmulator(AppConfig.host, 9199);
       }
     }

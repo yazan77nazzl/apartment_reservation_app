@@ -7,14 +7,19 @@ import '../core/config/app_config.dart';
 import '../models/record.dart';
 import 'image_storage.dart';
 import 'spark_actions.dart';
+import 'supabase_image_storage.dart';
 
 final repositoryProvider = Provider((ref) => HousingRepository());
 
 class HousingRepository {
   final db = FirebaseFirestore.instance;
   final functions = FirebaseFunctions.instanceFor(region: AppConfig.region);
-  final ImageStorage imageStorage =
-      AppConfig.demoImages ? DemoImageStorage() : FirebaseImageStorage();
+  final ImageStorage imageStorage = switch (AppConfig.imageStorage) {
+    'demo' => DemoImageStorage(),
+    'firebase' => FirebaseImageStorage(),
+    'supabase' => SupabaseImageStorage(),
+    _ => throw StateError('Unsupported image storage provider'),
+  };
   Stream<Record?> document(String collection, String id) {
     final stream = db.collection(collection).doc(id).snapshots();
     if (collection == 'apartments' && !AppConfig.useFunctions) {

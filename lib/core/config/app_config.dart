@@ -10,9 +10,11 @@ class AppConfig {
   static const useFunctions =
       String.fromEnvironment('BACKEND_MODE', defaultValue: 'spark') ==
           'functions';
-  static const demoImages =
-      String.fromEnvironment('IMAGE_STORAGE', defaultValue: 'demo') !=
-          'firebase';
+  static const imageStorage = String.fromEnvironment('IMAGE_STORAGE',
+      defaultValue: emulator ? 'demo' : 'supabase');
+  static const demoImages = imageStorage == 'demo';
+  static const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+  static const supabaseKey = String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
   static FirebaseOptions get options {
     if (emulator) {
       // Non-production Firebase Emulator Suite identifier, deliberately not credentials.
