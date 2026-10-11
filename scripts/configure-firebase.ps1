@@ -1,4 +1,4 @@
-param([string]$Platforms = 'android,ios')
+param([string]$Platforms = 'android,ios,web')
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $projectRoot

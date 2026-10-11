@@ -70,6 +70,8 @@ No real payment provider or client-side real-payment success exists. Do not depl
 
 ## Architecture
 
+To apply the supplied logo, save the original image as `assets/images/logo.png`, run `scripts/apply-logo.ps1`, and rebuild/restart Flutter. The login/header automatically use the bundled file; the script generates Android/iOS/web icons. Until the file is provided, the app uses its existing housing icon. The chat's inline image was visible but not available as a local file during this session.
+
 `lib/core/` contains configuration, localization, theme, guards and async/form widgets. Feature screens cover auth, listings/rooms, reservations/payments, owner dashboard/calendar, chat, reviews, profiles and notices. Riverpod owns session/repository/locale state; GoRouter applies role guards. Firestore streams render live data.
 
 `HousingRepository` selects `SparkActions` by default or callable Functions when `BACKEND_MODE=functions`. `ImageStorage` selects bundled `DemoImageStorage` by default or `FirebaseImageStorage` when `IMAGE_STORAGE=firebase`. UI consumers keep the same interface. Asset paths and future download URLs are both renderable.
