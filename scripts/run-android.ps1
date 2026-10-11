@@ -33,6 +33,8 @@ do {
     catch { $boot = $null }
 } while ($boot -ne '1' -and (Get-Date) -lt $deadline)
 if ($boot -ne '1') { throw 'The emulator did not finish booting. Check its window and retry.' }
+& $adb -s emulator-5554 shell settings put secure stylus_handwriting_enabled 0
+& $adb -s emulator-5554 shell settings put secure show_ime_with_hard_keyboard 1
 if ($Mode -eq 'demo') {
     Write-Host 'Demo mode requires scripts/start-emulators.ps1 and scripts/seed-demo.ps1.'
     & "$PSScriptRoot/run-demo.ps1" -Device emulator-5554
