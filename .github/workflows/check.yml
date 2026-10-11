@@ -1,0 +1,19 @@
+name: Verify source
+on: [push, pull_request]
+jobs:
+  flutter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: cp config/firebase_options.stub lib/firebase_options.dart
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test functions/test/domain.test.js

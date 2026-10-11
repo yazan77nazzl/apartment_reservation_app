@@ -1,0 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
+class DefaultFirebaseOptions {
+  static FirebaseOptions get currentPlatform => throw StateError('Run scripts/configure-firebase.ps1 to register your Firebase apps, or use scripts/run-demo.ps1 for a local emulator demo.');
+}

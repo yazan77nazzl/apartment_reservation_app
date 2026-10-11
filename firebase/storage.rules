@@ -1,0 +1,24 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signed() { return request.auth != null; }
+    function image() {
+      return request.resource.size < 8 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp)');
+    }
+    match /profiles/{uid}/{file} {
+      allow read: if signed();
+      allow create, update: if signed() && uid == request.auth.uid && image();
+      allow delete: if signed() && uid == request.auth.uid;
+    }
+    match /apartments/{apartmentId}/{file} {
+      allow read: if signed();
+      allow create, update: if signed()
+        && firestore.get(/databases/(default)/documents/apartments/$(apartmentId)).data.ownerId == request.auth.uid
+        && image();
+      allow delete: if signed()
+        && firestore.get(/databases/(default)/documents/apartments/$(apartmentId)).data.ownerId == request.auth.uid;
+    }
+    match /{all=**} { allow read, write: if false; }
+  }
+}

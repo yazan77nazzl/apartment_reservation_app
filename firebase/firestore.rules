@@ -1,0 +1,34 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signed() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+    function member(data) { return signed() && (data.studentId == me() || data.ownerId == me()); }
+    match /users/{uid} {
+      allow read: if signed() && uid == me();
+      allow write: if false;
+      match /tokens/{token} { allow read, write: if false; }
+    }
+    match /apartments/{id} { allow read: if signed(); allow write: if false; }
+    match /rooms/{id} { allow read: if signed(); allow write: if false; }
+    match /reservations/{id} { allow read: if member(resource.data); allow write: if false; }
+    match /payments/{id} { allow read: if member(resource.data); allow write: if false; }
+    match /reviews/{id} { allow read: if signed(); allow write: if false; }
+    match /chats/{id} {
+      allow read: if signed() && me() in resource.data.participants;
+      allow write: if false;
+      match /messages/{message} {
+        allow read: if signed() && me() in get(/databases/$(database)/documents/chats/$(id)).data.participants;
+        allow write: if false;
+      }
+    }
+    match /notifications/{id} {
+      allow read: if signed() && resource.data.userId == me();
+      allow update: if signed() && resource.data.userId == me()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
+        && request.resource.data.read is bool;
+      allow create, delete: if false;
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

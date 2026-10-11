@@ -1,0 +1,54 @@
+﻿{
+    "functions":  [
+                      {
+                          "source":  "functions",
+                          "codebase":  "housing"
+                      }
+                  ],
+    "firestore":  {
+                      "rules":  "firebase/firestore.spark.rules",
+                      "indexes":  "firebase/firestore.indexes.json"
+                  },
+    "storage":  {
+                    "rules":  "firebase/storage.rules"
+                },
+    "emulators":  {
+                      "auth":  {
+                                   "port":  9099
+                               },
+                      "firestore":  {
+                                        "port":  8080
+                                    },
+                      "functions":  {
+                                        "port":  5001
+                                    },
+                      "storage":  {
+                                      "port":  9199
+                                  },
+                      "ui":  {
+                                 "enabled":  true
+                             },
+                      "singleProjectMode":  true
+                  },
+    "flutter":  {
+                    "platforms":  {
+                                      "android":  {
+                                                      "default":  {
+                                                                      "projectId":  "apartment-reservation-ap-d7a35",
+                                                                      "appId":  "1:361783523341:android:815fb0a977c4eb158a7d44",
+                                                                      "fileOutput":  "android/app/google-services.json"
+                                                                  }
+                                                  },
+                                      "dart":  {
+                                                   "lib/firebase_options.dart":  {
+                                                                                     "projectId":  "apartment-reservation-ap-d7a35",
+                                                                                     "configurations":  {
+                                                                                                            "android":  "1:361783523341:android:815fb0a977c4eb158a7d44",
+                                                                                                            "ios":  "1:361783523341:ios:9a0088fc3041b2ca8a7d44",
+                                                                                                            "web":  "1:361783523341:web:a182148a36aca4aa8a7d44"
+                                                                                                        }
+                                                                                 }
+                                               }
+                                  }
+                }
+}

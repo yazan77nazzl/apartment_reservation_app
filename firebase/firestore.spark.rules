@@ -1,0 +1,156 @@
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  function signed() { return request.auth != null; }
+  function me() { return request.auth.uid; }
+  function user() { return get(/databases/$(database)/documents/users/$(me())).data; }
+  function role(r) { return signed() && user().role == r; }
+  function member(r) { return signed() && (r.studentId == me() || r.ownerId == me()); }
+  function txt(x,max) { return x is string && x.size() > 0 && x.size() <= max; }
+  function image(x) { return x is string && (x == '' || x in ['assets/images/demo-garden.png','assets/images/demo-olive.png','assets/images/demo-avatar.png'] || x.matches('https://firebasestorage.googleapis.com/.*')); }
+  function images(x) { return x is list && x.size() <= 10
+   && (x.size() < 1 || image(x[0])) && (x.size() < 2 || image(x[1]))
+   && (x.size() < 3 || image(x[2])) && (x.size() < 4 || image(x[3]))
+   && (x.size() < 5 || image(x[4])) && (x.size() < 6 || image(x[5]))
+   && (x.size() < 7 || image(x[6])) && (x.size() < 8 || image(x[7]))
+   && (x.size() < 9 || image(x[8])) && (x.size() < 10 || image(x[9])); }
+  function profileValid(p) { return txt(p.firstName,80) && txt(p.lastName,80) && txt(p.phone,30) && txt(p.address,200)
+   && p.gender in ['male','female','unspecified'] && p.role in ['student','owner']
+   && p.email == request.auth.token.email && image(p.photoUrl); }
+  match /users/{uid} {
+   allow read: if signed() && uid == me();
+   allow create: if signed() && uid == me() && profileValid(request.resource.data)
+    && request.resource.data.keys().hasOnly(['firstName','lastName','phone','address','gender','role','email','photoUrl','createdAt']) && request.resource.data.createdAt == request.time;
+   allow update: if signed() && uid == me() && profileValid(request.resource.data)
+    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['firstName','lastName','phone','address','gender','email','photoUrl','updatedAt']) && request.resource.data.updatedAt == request.time;
+   allow delete: if false;
+   match /{rest=**} { allow read,write: if false; }
+  }
+  function apartmentValid(a) { return a.ownerId == me() && txt(a.ownerName,170) && txt(a.contactPhone,30)
+   && txt(a.title,120) && txt(a.description,4000) && txt(a.location,200) && a.nearestGate is string && a.nearestGate.size() <= 100
+   && a.gender in ['male','female','any'] && a.housingType in ['apartment','studio','residence'] && images(a.images) && a.updatedAt == request.time; }
+  match /apartments/{id} {
+   allow read: if signed();
+   allow create: if role('owner') && apartmentValid(request.resource.data)
+    && request.resource.data.keys().hasOnly(['ownerId','ownerName','contactPhone','title','description','location','nearestGate','gender','housingType','images','createdAt','updatedAt','ratingSum','reviewCount','averageRating','minPriceMinor'])
+    && request.resource.data.createdAt == request.time && request.resource.data.ratingSum == 0 && request.resource.data.reviewCount == 0 && request.resource.data.averageRating == 0 && request.resource.data.minPriceMinor == 0;
+   allow update: if role('owner') && resource.data.ownerId == me() && apartmentValid(request.resource.data)
+    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerName','contactPhone','title','description','location','nearestGate','gender','housingType','images','updatedAt']);
+   allow delete: if false;
+  }
+  function roomValid(r) { return r.ownerId == me() && get(/databases/$(database)/documents/apartments/$(r.apartmentId)).data.ownerId == me()
+   && txt(r.number,30) && r.floor is int && r.floor >= -5 && r.floor <= 100 && r.beds is int && r.beds >= 1 && r.beds <= 20
+   && r.priceMinor is int && r.priceMinor >= 100 && r.priceMinor <= 100000000 && txt(r.description,2000) && r.available is bool && r.updatedAt == request.time; }
+  function oldLockFree(r) {
+   let active = r.get('activeReservationId','');
+   return active == '' || !exists(/databases/$(database)/documents/reservations/$(active))
+    || get(/databases/$(database)/documents/reservations/$(active)).data.status in ['cancelled','rejected','expired']
+    || (get(/databases/$(database)/documents/reservations/$(active)).data.status == 'awaiting_payment' && get(/databases/$(database)/documents/reservations/$(active)).data.holdUntil <= request.time)
+    || (get(/databases/$(database)/documents/reservations/$(active)).data.status in ['confirmed','completed'] && get(/databases/$(database)/documents/reservations/$(active)).data.endAt <= request.time);
+  }
+  function claimLock(id) {
+   let next = request.resource.data.activeReservationId;
+   let r = getAfter(/databases/$(database)/documents/reservations/$(next)).data;
+   return role('owner') && resource.data.ownerId == me() && oldLockFree(resource.data) && r.ownerId == me() && r.roomId == id && r.status == 'awaiting_payment';
+  }
+  function clearLock() {
+   let active = resource.data.get('activeReservationId','');
+   let r = getAfter(/databases/$(database)/documents/reservations/$(active)).data;
+   return active != '' && request.resource.data.activeReservationId == '' && member(r) && r.status == 'cancelled';
+  }
+  match /rooms/{id} {
+   allow read: if signed();
+   allow create: if role('owner') && roomValid(request.resource.data)
+    && request.resource.data.keys().hasOnly(['ownerId','apartmentId','number','floor','beds','priceMinor','description','available','updatedAt','createdAt','activeReservationId']) && request.resource.data.createdAt == request.time && request.resource.data.activeReservationId == '';
+   allow update: if (role('owner') && resource.data.ownerId == me() && roomValid(request.resource.data)
+    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['number','floor','beds','priceMinor','description','available','updatedAt']))
+    || (signed() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['activeReservationId']) && (claimLock(id) || clearLock()));
+   allow delete: if false;
+  }
+  function requestValid(r) {
+   let room = get(/databases/$(database)/documents/rooms/$(r.roomId)).data;
+   let apartment = get(/databases/$(database)/documents/apartments/$(r.apartmentId)).data;
+   let months = (r.endAt - r.startAt).seconds() / 2592000;
+   return r.studentId == me() && r.ownerId == room.ownerId && r.apartmentId == room.apartmentId && room.available
+    && (apartment.gender == 'any' || apartment.gender == user().gender)
+    && r.studentName == user().firstName + ' ' + user().lastName && r.studentAddress == user().address && r.studentPhone == user().phone
+    && r.apartmentTitle == apartment.title && r.roomNumber == room.number
+    && r.startAt is timestamp && r.endAt is timestamp && r.startAt == r.startAt.date() && r.endAt == r.endAt.date()
+    && r.startAt >= request.time.date() && r.endAt > r.startAt && r.endAt <= r.startAt + duration.value(366,'d')
+    && r.rentalMonths is int && r.rentalMonths >= months && r.rentalMonths < months + 1
+    && r.amountMinor == room.priceMinor * r.rentalMonths && r.currency == 'ILS' && r.status == 'pending' && r.paymentStatus == 'unpaid' && r.createdAt == request.time
+    && r.start is string && r.end is string && r.parentId is string
+    && (r.parentId == '' || (get(/databases/$(database)/documents/reservations/$(r.parentId)).data.studentId == me()
+     && get(/databases/$(database)/documents/reservations/$(r.parentId)).data.roomId == r.roomId
+     && get(/databases/$(database)/documents/reservations/$(r.parentId)).data.status in ['confirmed','completed']
+     && r.startAt >= get(/databases/$(database)/documents/reservations/$(r.parentId)).data.endAt));
+  }
+  match /reservations/{id} {
+   allow read: if member(resource.data);
+   allow create: if role('student') && requestValid(request.resource.data)
+    && request.resource.data.keys().hasOnly(['studentId','ownerId','apartmentId','roomId','apartmentTitle','roomNumber','studentName','studentAddress','studentPhone','start','end','startAt','endAt','rentalMonths','amountMinor','currency','status','paymentStatus','parentId','createdAt']);
+   allow update: if member(resource.data) && request.resource.data.updatedAt == request.time
+    && ((role('owner') && resource.data.ownerId == me() && resource.data.status == 'pending'
+     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','holdUntil','holdExpiresAt','updatedAt'])
+     && request.resource.data.holdUntil >= request.time + duration.value(23,'h') && request.resource.data.holdUntil <= request.time + duration.value(25,'h')
+     && request.resource.data.holdExpiresAt == request.resource.data.holdUntil.toMillis()
+     && (request.resource.data.status == 'rejected' || (request.resource.data.status == 'awaiting_payment' && resource.data.startAt >= request.time.date()
+      && getAfter(/databases/$(database)/documents/rooms/$(resource.data.roomId)).data.activeReservationId == id)))
+     || (resource.data.status in ['pending','awaiting_payment'] && request.resource.data.status == 'cancelled'
+      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt'])
+      && getAfter(/databases/$(database)/documents/rooms/$(resource.data.roomId)).data.get('activeReservationId','') != id));
+   allow delete: if false;
+  }
+  match /payments/{id} { allow read: if member(resource.data); allow write: if false; }
+  match /reviews/{id} {
+   function valid(r) {
+    let stay = get(/databases/$(database)/documents/reservations/$(r.reservationId)).data;
+    return role('student') && r.studentId == me() && id == r.apartmentId + '_' + me()
+     && r.ownerId == stay.ownerId && stay.apartmentId == r.apartmentId && stay.studentId == me() && stay.status in ['confirmed','completed'] && stay.startAt <= request.time
+     && r.rating is int && r.rating >= 1 && r.rating <= 5 && txt(r.comment,2000) && r.studentName == user().firstName + ' ' + user().lastName && r.updatedAt == request.time
+     && r.keys().hasOnly(['apartmentId','reservationId','studentId','studentName','ownerId','rating','comment','updatedAt']);
+   }
+   allow read: if signed();
+   allow create: if valid(request.resource.data);
+   allow update: if resource.data.studentId == me() && valid(request.resource.data) && request.resource.data.apartmentId == resource.data.apartmentId;
+   allow delete: if false;
+  }
+  match /chats/{id} {
+   function part() { return signed() && me() in resource.data.participants; }
+   allow read: if part();
+   allow create: if role('student') && request.resource.data.studentId == me()
+    && request.resource.data.ownerId == get(/databases/$(database)/documents/apartments/$(request.resource.data.apartmentId)).data.ownerId
+    && request.resource.data.participants == [me(),request.resource.data.ownerId] && id == me() + '_' + request.resource.data.ownerId
+    && txt(request.resource.data.studentName,170) && txt(request.resource.data.ownerName,170) && request.resource.data.latestMessage == '' && request.resource.data.readAt == {}
+    && request.resource.data.updatedAt == request.time && request.resource.data.keys().hasOnly(['participants','studentId','ownerId','studentName','ownerName','apartmentId','latestMessage','readAt','updatedAt']);
+   allow update: if part() && ((request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readAt'])
+    && request.resource.data.readAt.diff(resource.data.readAt).affectedKeys().hasOnly([me()]) && request.resource.data.readAt[me()] == request.time)
+    || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['latestMessage','latestSenderId','latestMessageId','updatedAt'])
+     && request.resource.data.latestSenderId == me() && request.resource.data.updatedAt == request.time
+     && getAfter(/databases/$(database)/documents/chats/$(id)/messages/$(request.resource.data.latestMessageId)).data.senderId == me()
+     && getAfter(/databases/$(database)/documents/chats/$(id)/messages/$(request.resource.data.latestMessageId)).data.createdAt == request.time
+     && request.resource.data.latestMessage == getAfter(/databases/$(database)/documents/chats/$(id)/messages/$(request.resource.data.latestMessageId)).data.body));
+   allow delete: if false;
+   match /messages/{mid} {
+    allow read: if signed() && me() in get(/databases/$(database)/documents/chats/$(id)).data.participants;
+    allow create: if signed() && me() in get(/databases/$(database)/documents/chats/$(id)).data.participants
+     && request.resource.data.keys().hasOnly(['senderId','body','createdAt']) && request.resource.data.senderId == me() && txt(request.resource.data.body,4000) && request.resource.data.createdAt == request.time
+     && getAfter(/databases/$(database)/documents/chats/$(id)).data.latestMessageId == mid;
+    allow update,delete: if false;
+   }
+  }
+  function memberTarget(uid,id) { let r = getAfter(/databases/$(database)/documents/reservations/$(id)).data; return uid == r.studentId || uid == r.ownerId; }
+  match /notifications/{id} {
+   allow read: if signed() && resource.data.userId == me();
+   allow update: if signed() && resource.data.userId == me() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']) && request.resource.data.read is bool;
+   allow create: if signed() && request.resource.data.keys().hasOnly(['userId','reservationId','status','title','body','read','createdAt'])
+    && member(getAfter(/databases/$(database)/documents/reservations/$(request.resource.data.reservationId)).data)
+    && request.resource.data.userId != me() && memberTarget(request.resource.data.userId,request.resource.data.reservationId)
+    && request.resource.data.status == getAfter(/databases/$(database)/documents/reservations/$(request.resource.data.reservationId)).data.status
+    && id == request.resource.data.reservationId + '_' + request.resource.data.status && txt(request.resource.data.title,100) && txt(request.resource.data.body,500)
+    && request.resource.data.read == false && request.resource.data.createdAt == request.time;
+   allow delete: if false;
+  }
+  match /{path=**} { allow read,write: if false; }
+ }
+}
